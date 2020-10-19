@@ -1,3 +1,4 @@
+using AbstractAlgebra
 import AlphaZero.GI
 
 mutable struct BBCube{N} <: GI.AbstractGame
@@ -70,6 +71,7 @@ Base.@propagate_inbounds function Base.permutedims(cidx::CartesianIndex, perm::A
     return CartesianIndex(ntuple(i->cidx[perm[i]], length(cidx)))
 end
 
+Base.permutedims(A::AbstractArray, σ::AbstractAlgebra.Perm) = permutedims(A, σ.d)
 Base.permutedims(cidx::CartesianIndex, σ::AbstractAlgebra.Perm) = permutedims(cidx, σ.d)
 
 function GI.symmetries(::Type{BBCube{N}}, state) where N
