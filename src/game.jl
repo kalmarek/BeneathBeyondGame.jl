@@ -74,16 +74,34 @@ end
 Base.permutedims(A::AbstractArray, σ::AbstractAlgebra.Perm) = permutedims(A, σ.d)
 Base.permutedims(cidx::CartesianIndex, σ::AbstractAlgebra.Perm) = permutedims(cidx, σ.d)
 
+Base.isone(p::AbstractAlgebra.Perm) = p.d == 1:length(p.d)
+
+function action_on_gameactions(σ::AbstractAlgebra.Perm, cids, lids)
+    return [lids[permutedims(cids[a], σ)] for a in vec(lids)]
+end
+
+function action_on_gamestate(
+    state,
+    σ::AbstractAlgebra.Perm;
+    cids=CartesianIndices(state.board),
+    lids=LinearIndices(state.board)
+)
+    p = action_on_gameactions(σ, cids, lids)
+    return (
+        (
+            board = permutedims(state.board, σ),
+            history = UInt16[p[h] for h in state.history]
+        ),
+        p
+    )
+end
+
 function GI.symmetries(::Type{BBCube{N}}, state) where N
     cids = CartesianIndices(state.board)
     lids = LinearIndices(state.board)
 
-    return [
-        (
-            board=permutedims(state.board, σ),
-            history=UInt16[UInt16(lids[permutedims(cids[h], σ)]) for h in state.history]
-        )
-        for σ in AbstractAlgebra.Generic.SymmetricGroup(N)
+    return [ action_on_gamestate(state, σ, cids=cids, lids=lids)
+        for σ in AbstractAlgebra.Generic.SymmetricGroup(N) if !isone(σ)
     ]
 end
 
