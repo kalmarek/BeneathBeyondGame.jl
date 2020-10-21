@@ -8,6 +8,6 @@ module BeneathBeyondGame
     module Training
         using AlphaZero
         import ..GameSpec
-        # include("params.jl")
+        include("params.jl")
     end
 end
