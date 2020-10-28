@@ -1,11 +1,5 @@
 # This file is machine-generated - editing it directly is not advised
 
-[[AbstractAlgebra]]
-deps = ["InteractiveUtils", "LinearAlgebra", "Markdown", "Random", "RandomExtensions", "SparseArrays", "Test"]
-git-tree-sha1 = "b861cb913bc7e2e52e93bb9ad3def00bbd658889"
-uuid = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
-version = "0.11.0"
-
 [[AbstractFFTs]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "051c95d6836228d120f5f4b984dd5aba1624f716"
@@ -619,12 +613,6 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-
-[[RandomExtensions]]
-deps = ["Random", "SparseArrays", "Test"]
-git-tree-sha1 = "a1f5f900aaf39849bd59efcf751df79f1179bb73"
-uuid = "fb686558-2515-59ef-acaa-46db3789a887"
-version = "0.4.2"
 
 [[RecipesBase]]
 git-tree-sha1 = "6ee6c35fe69e79e17c455a386c1ccdc66d9f7da4"

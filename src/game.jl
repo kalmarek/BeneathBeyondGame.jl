@@ -77,6 +77,37 @@ end
 ##### Symmetries
 #####
 
+struct AllPerms{T<:Integer}
+    all::Int
+    c::Vector{T}
+    elts::Vector{T}
+
+    AllPerms(n::T) where T = new{T}(factorial(n), ones(T, n), collect(1:n))
+end
+
+Base.eltype(::Type{AllPerms{T}}) where T = Vector{T}
+Base.length(A::AllPerms) = A.all
+
+@inline Base.iterate(A::AllPerms) = (A.elts, 1)
+
+@inline function Base.iterate(A::AllPerms, count)
+    count >= A.all && return nothing
+
+    k,n = 0,1
+
+    @inbounds while true
+        if A.c[n] < n
+            k = ifelse(isodd(n), 1, A.c[n])
+            A.elts[k], A.elts[n] = A.elts[n], A.elts[k]
+            A.c[n] += 1
+            return A.elts, count + 1
+        else
+            A.c[n] = 1
+            n += 1
+        end
+    end
+end
+
 function Base.permutedims(
     cidx::CartesianIndex,
     perm::AbstractVector{<:Integer},
@@ -96,24 +127,23 @@ end
 
 function action_on_gamestate(
     state,
-    σ::AbstractAlgebra.Perm;
+    σ::AbstractVector{<:Integer};
     cids = CartesianIndices(state.board),
     lids = LinearIndices(state.board),
 )
     p = action_on_gameactions(σ, cids, lids)
     state_p =
         (board = permutedims(state.board, σ), history = UInt16[p[h] for h in state.history])
-    return (state_p, p)
+    return (state_p, convert(Vector{Int}, p))
 end
 
 function GI.symmetries(::CubeSpec{N}, state) where {N}
     cids = CartesianIndices(state.board)
     lids = LinearIndices(state.board)
 
-    return [
-        @inbounds action_on_gamestate(state, σ, cids = cids, lids = lids)
-        for σ in AbstractAlgebra.SymmetricGroup(N) if !isone(σ)
-    ]
+    return Tuple{typeof(state), Vector{Int}}[
+        action_on_gamestate(state, σ, cids = cids, lids = lids) for σ in Iterators.rest(AllPerms(N), 1)
+        ]
 end
 
 #####
