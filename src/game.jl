@@ -109,20 +109,16 @@ Base.length(A::AllPerms) = A.all
 end
 
 function Base.permutedims(
-    cidx::CartesianIndex,
+    cidx::CartesianIndex{N},
     perm::AbstractVector{<:Integer},
-)
+) where N
+    @boundscheck length(perm) == N
     @boundscheck all(i -> 0 < perm[i] <= length(cidx), 1:length(cidx))
-    return CartesianIndex(ntuple(i -> cidx[perm[i]], length(cidx)))
+    return CartesianIndex(ntuple(i -> @inbounds(cidx[perm[i]]), length(cidx)))
 end
 
-Base.permutedims(A::AbstractArray, σ::AbstractAlgebra.Perm) = permutedims(A, σ.d)
-Base.permutedims(cidx::CartesianIndex, σ::AbstractAlgebra.Perm) = permutedims(cidx, σ.d)
-
-Base.isone(p::AbstractAlgebra.Perm) = p.d == 1:length(p.d)
-
-function action_on_gameactions(σ::AbstractAlgebra.Perm, cids, lids)
-    return [lids[permutedims(cids[a], σ)] for a in vec(lids)]
+function action_homomorphism(σ::AbstractVector{<:Integer}, cids, lids)
+    return Int[lids[permutedims(cids[a], σ)] for a in vec(lids)]
 end
 
 function action_on_gamestate(
@@ -131,7 +127,7 @@ function action_on_gamestate(
     cids = CartesianIndices(state.board),
     lids = LinearIndices(state.board),
 )
-    p = action_on_gameactions(σ, cids, lids)
+    p = action_homomorphism(invperm(σ), cids, lids)
     state_p =
         (board = permutedims(state.board, σ), history = UInt16[p[h] for h in state.history])
     return (state_p, convert(Vector{Int}, p))
