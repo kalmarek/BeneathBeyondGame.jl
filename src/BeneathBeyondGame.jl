@@ -8,6 +8,7 @@ module BeneathBeyondGame
     module Training
         using AlphaZero
         import ..GameSpec
+        import ..CubeSpec
         include("params.jl")
     end
 end

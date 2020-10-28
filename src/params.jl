@@ -64,5 +64,5 @@ benchmark = [
     Benchmark.MctsRollouts(self_play.mcts),
     benchmark_sim)]
 
-experiment = Experiment(
-  "cube", GameSpec(), params, Network, netparams, benchmark=benchmark)
+experiment(N::Integer) = Experiment(
+  "cube_$N", CubeSpec{N}(), params, Network, netparams, benchmark=benchmark)
