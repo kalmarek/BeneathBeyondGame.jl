@@ -60,7 +60,7 @@ end
 
 GI.play!(g::CubeEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CubeEnv) = isempty(history(g)) ? Int(0) : -Int(sum(history(g))) # Polymake.triangulation_size(g.bb)
+GI.heuristic_value(g::CubeEnv) = isempty(history(g)) ? 0.0 : float(sum(history(g))) # Polymake.triangulation_size(g.bb)
 
 #####
 ##### Machine Learning API
