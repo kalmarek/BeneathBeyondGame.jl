@@ -19,12 +19,17 @@ function GI.init(
     state = (board = falses(board_shape(CubeSpec{N})), history = UInt16[]),
 ) where {N}
     sizehint!(state.history, 2^N)
-    return CubeEnv{N}(state.board, state.history)
+    return CubeEnv{N}(copy(state.board), copy(state.history))
 end
 
 GI.spec(::CubeEnv{N}) where {N} = CubeSpec{N}()
 
 GI.two_players(::CubeSpec) = false
+
+function GI.set_state!(g::CubeEnv, state)
+    g.board = copy(state.board)
+    g.history = copy(state.history)
+end
 
 #####
 ##### Game API
@@ -34,7 +39,7 @@ GI.actions(::CubeSpec{N}) where {N} = 1:2^N
 
 GI.actions_mask(g::CubeEnv) = vec(.~(board(g)))
 
-GI.current_state(g::CubeEnv) = (board = board(g), history = history(g))
+GI.current_state(g::CubeEnv) = (board = copy(board(g)), history = copy(history(g)))
 
 GI.white_playing(::CubeEnv) = true
 
