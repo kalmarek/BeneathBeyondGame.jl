@@ -154,9 +154,14 @@ function GI.action_string(::CubeSpec{N}, action) where {N}
 end
 
 function GI.parse_action(::CubeSpec{N}, str) where {N}
-    @assert length(str) == N
-    ci = tuple(map(x -> (x == "0" ? 1 : 2), str))
-    return LinearIndices(board_shape(CubeSpec{N}))[ci]
+    if length(str) <= ceil(log10(N))
+        k = parse(Int, str)
+        return k
+    else
+        ci = map(x -> (x == '0' ? 1 : 2), collect(str)[1:N])
+        k = getindex(LinearIndices(board_shape(CubeSpec{N})), ci...)
+        return k
+    end
 end
 
 function GI.read_state(::CubeSpec{N}) where {N}
@@ -164,6 +169,9 @@ function GI.read_state(::CubeSpec{N}) where {N}
 end
 
 function GI.render(g::CubeEnv{N}; with_position_names = true, botmargin = true) where {N}
+
+    println("current value: ", GI.heuristic_value(g), "\n")
+
     st = GI.current_state(g)
     amask = GI.actions_mask(g)
     k = ceil(Int, log10(2^N))
@@ -171,7 +179,7 @@ function GI.render(g::CubeEnv{N}; with_position_names = true, botmargin = true) 
         color =
         amask[action] ? crayon"bold fg:light_gray" : crayon"fg:dark_gray"
         with_position_names && print(color, rpad("$action", k + 2), " | ")
-        println(color, GI.action_string(GI.spec(g), action), crayon"default")
+        println(color, GI.action_string(GI.spec(g), action), crayon"reset")
     end
     botmargin && print("\n")
 end
