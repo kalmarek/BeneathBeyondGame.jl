@@ -60,7 +60,7 @@ end
 
 GI.play!(g::CubeEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CubeEnv) = isempty(history(g)) ? 0.0 : float(sum(history(g))) # Polymake.triangulation_size(g.bb)
+GI.heuristic_value(g::CubeEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
 
 #####
 ##### Machine Learning API
@@ -108,13 +108,13 @@ Base.length(A::AllPerms) = A.all
     end
 end
 
-function Base.permutedims(
+Base.@propagate_inbounds function Base.permutedims(
     cidx::CartesianIndex{N},
     perm::AbstractVector{<:Integer},
 ) where N
     @boundscheck length(perm) == N
     @boundscheck all(i -> 0 < perm[i] <= length(cidx), 1:length(cidx))
-    return CartesianIndex(ntuple(i -> @inbounds(cidx[perm[i]]), length(cidx)))
+    return CartesianIndex(ntuple(i -> @inbounds(cidx[perm[i]]), Val(N)))
 end
 
 function action_homomorphism(σ::AbstractVector{<:Integer}, cids, lids)
