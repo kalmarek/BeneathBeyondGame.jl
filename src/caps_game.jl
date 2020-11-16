@@ -47,10 +47,17 @@ GI.white_playing(::CapsEnv) = true
 GI.game_terminated(g::CapsEnv) = all(board(g))
 
 GI.white_reward(g::CapsEnv) =
-    isempty(history(g)) ? 0.0 : length(history(g))
+    isempty(history(g)) ? 0.0 : Float64(length(history(g)))
 
 function third_point_on_line(p1, p2)
-   return ((p1 .+ p2) .*(-1)) .% 3
+   # q1 = p1 .- 1;
+   # q2 = p2 .- 1;
+   # qr = ((q1 .+ q2) .* (-1))
+   # qr = qr .+ 3
+   # qr = qr .% 3
+   # qr = qr .+ 1
+   # return qr
+   return mod.(-1 .*(p1 .+ p2), Ref(1:3))
 end
 
 Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
@@ -61,7 +68,7 @@ Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
     for pIndex in history(g)
        p = Tuple(CartesianIndices(g.board)[pIndex])
        pq = third_point_on_line(p, q)
-       g.board[pq] = true
+       g.board[pq...] = true
     end
 
     push!(g.history, n)
@@ -78,8 +85,8 @@ GI.heuristic_value(g::CapsEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(
 
 function GI.vectorize_state(::CapsSpec{N}, state) where {N}
     res = zeros(Float32, 2^N + 3^N)
-    @inbounds res[1:2^N] .= vec(state.board)
-    @inbounds res[2^N+1:2^N+length(state.history)] .= state.history
+    @inbounds res[1:3^N] .= vec(state.board)
+    @inbounds res[3^N+1:3^N+length(state.history)] .= state.history
     return res
 end
 
