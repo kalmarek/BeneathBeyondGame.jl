@@ -1,6 +1,8 @@
 module BeneathBeyondGame
     export GameEnv, GameSpec
 
+    import Polymake
+
     include("game.jl")
     const GameEnv = CubeEnv{5}
     const GameSpec = CubeSpec{5}
