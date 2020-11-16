@@ -50,7 +50,7 @@ GI.white_reward(g::CapsEnv) =
     isempty(history(g)) ? 0.0 : length(history(g))
 
 function third_point_on_line(p1, p2)
-   return (p1 .+ p2) .% 3
+   return ((p1 .+ p2) .*(-1)) .% 3
 end
 
 Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
