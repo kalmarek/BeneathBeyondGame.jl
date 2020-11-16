@@ -1,14 +1,14 @@
-import AbstractAlgebra
 import AlphaZero.GI
 
 struct CapsSpec{N} <: GI.AbstractGameSpec end
 
-board_shape(::Type{CapsSpec{N}}) where {N} = ntuple(_ -> 2, N)
+board_shape(::Type{CapsSpec{N}}) where {N} = ntuple(_ -> 3, N)
 
+# Optionally input characteristic p (for now it is 3)
 mutable struct CapsEnv{N} <: GI.AbstractGameEnv
     board::BitArray{N}
     history::Vector{UInt16}
-    # bb::Polymake.BeneathBeyond
+    # possible_moves::Vector{UInt16}
 end
 
 board(g::CapsEnv) = g.board
@@ -18,7 +18,8 @@ function GI.init(
     ::CapsSpec{N},
     state = (board = falses(board_shape(CapsSpec{N})), history = UInt16[]),
 ) where {N}
-    sizehint!(state.history, 2^N)
+   # Todo: Better upper bound
+    sizehint!(state.history, 3^N-N)
     return CapsEnv{N}(copy(state.board), copy(state.history))
 end
 
@@ -35,7 +36,7 @@ end
 ##### Game API
 #####
 
-GI.actions(::CapsSpec{N}) where {N} = 1:2^N
+GI.actions(::CapsSpec{N}) where {N} = 1:3^N
 
 GI.actions_mask(g::CapsEnv) = vec(.~(board(g)))
 
@@ -46,15 +47,24 @@ GI.white_playing(::CapsEnv) = true
 GI.game_terminated(g::CapsEnv) = all(board(g))
 
 GI.white_reward(g::CapsEnv) =
-    isempty(history(g)) ? 0.0 : -Float64(sum(x -> x^2, history(g)))
+    isempty(history(g)) ? 0.0 : length(history(g))
+
+function third_point_on_line(p1, p2)
+   return (p1 .+ p2) .% 3
+end
 
 Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
     @boundscheck checkbounds(board(g), n)
 
     g.board[n] = true
-    push!(g.history, n)
-    # Polymake.add_point!(g.bb, n)
+    q = Tuple(CartesianIndices(g.board)[n])
+    for pIndex in history(g)
+       p = Tuple(CartesianIndices(g.board)[pIndex])
+       pq = third_point_on_line(p, q)
+       g.board[pq] = true
+    end
 
+    push!(g.history, n)
     return g
 end
 
@@ -67,7 +77,7 @@ GI.heuristic_value(g::CapsEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(
 #####
 
 function GI.vectorize_state(::CapsSpec{N}, state) where {N}
-    res = zeros(Float32, 2^(N + 1))
+    res = zeros(Float32, 2^N + 3^N)
     @inbounds res[1:2^N] .= vec(state.board)
     @inbounds res[2^N+1:2^N+length(state.history)] .= state.history
     return res
@@ -133,14 +143,14 @@ function action_on_gamestate(
     return (state_p, convert(Vector{Int}, p))
 end
 
-function GI.symmetries(::CapsSpec{N}, state) where {N}
-    cids = CartesianIndices(state.board)
-    lids = LinearIndices(state.board)
-
-    return Tuple{typeof(state), Vector{Int}}[
-        action_on_gamestate(state, σ, cids = cids, lids = lids) for σ in Iterators.rest(AllPerms(N), 1)
-        ]
-end
+# function GI.symmetries(::CapsSpec{N}, state) where {N}
+#     cids = CartesianIndices(state.board)
+#     lids = LinearIndices(state.board)
+# 
+#     return Tuple{typeof(state), Vector{Int}}[
+#         action_on_gamestate(state, σ, cids = cids, lids = lids) for σ in Iterators.rest(AllPerms(N), 1)
+#         ]
+# end
 
 #####
 ##### Interaction API
