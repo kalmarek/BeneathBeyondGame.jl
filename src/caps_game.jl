@@ -1,32 +1,32 @@
 import AbstractAlgebra
 import AlphaZero.GI
 
-struct CubeSpec{N} <: GI.AbstractGameSpec end
+struct CapsSpec{N} <: GI.AbstractGameSpec end
 
-board_shape(::Type{CubeSpec{N}}) where {N} = ntuple(_ -> 2, N)
+board_shape(::Type{CapsSpec{N}}) where {N} = ntuple(_ -> 2, N)
 
-mutable struct CubeEnv{N} <: GI.AbstractGameEnv
+mutable struct CapsEnv{N} <: GI.AbstractGameEnv
     board::BitArray{N}
     history::Vector{UInt16}
     # bb::Polymake.BeneathBeyond
 end
 
-board(g::CubeEnv) = g.board
-history(g::CubeEnv) = g.history
+board(g::CapsEnv) = g.board
+history(g::CapsEnv) = g.history
 
 function GI.init(
-    ::CubeSpec{N},
-    state = (board = falses(board_shape(CubeSpec{N})), history = UInt16[]),
+    ::CapsSpec{N},
+    state = (board = falses(board_shape(CapsSpec{N})), history = UInt16[]),
 ) where {N}
     sizehint!(state.history, 2^N)
-    return CubeEnv{N}(copy(state.board), copy(state.history))
+    return CapsEnv{N}(copy(state.board), copy(state.history))
 end
 
-GI.spec(::CubeEnv{N}) where {N} = CubeSpec{N}()
+GI.spec(::CapsEnv{N}) where {N} = CapsSpec{N}()
 
-GI.two_players(::CubeSpec) = false
+GI.two_players(::CapsSpec) = false
 
-function GI.set_state!(g::CubeEnv, state)
+function GI.set_state!(g::CapsEnv, state)
     g.board = copy(state.board)
     g.history = copy(state.history)
 end
@@ -35,20 +35,20 @@ end
 ##### Game API
 #####
 
-GI.actions(::CubeSpec{N}) where {N} = 1:2^N
+GI.actions(::CapsSpec{N}) where {N} = 1:2^N
 
-GI.actions_mask(g::CubeEnv) = vec(.~(board(g)))
+GI.actions_mask(g::CapsEnv) = vec(.~(board(g)))
 
-GI.current_state(g::CubeEnv) = (board = copy(board(g)), history = copy(history(g)))
+GI.current_state(g::CapsEnv) = (board = copy(board(g)), history = copy(history(g)))
 
-GI.white_playing(::CubeEnv) = true
+GI.white_playing(::CapsEnv) = true
 
-GI.game_terminated(g::CubeEnv) = all(board(g))
+GI.game_terminated(g::CapsEnv) = all(board(g))
 
-GI.white_reward(g::CubeEnv) =
+GI.white_reward(g::CapsEnv) =
     isempty(history(g)) ? 0.0 : -Float64(sum(x -> x^2, history(g)))
 
-Base.@propagate_inbounds function Base.push!(g::CubeEnv, n::Integer)
+Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
     @boundscheck checkbounds(board(g), n)
 
     g.board[n] = true
@@ -58,15 +58,15 @@ Base.@propagate_inbounds function Base.push!(g::CubeEnv, n::Integer)
     return g
 end
 
-GI.play!(g::CubeEnv, action) = push!(g, action)
+GI.play!(g::CapsEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CubeEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
+GI.heuristic_value(g::CapsEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
 
 #####
 ##### Machine Learning API
 #####
 
-function GI.vectorize_state(::CubeSpec{N}, state) where {N}
+function GI.vectorize_state(::CapsSpec{N}, state) where {N}
     res = zeros(Float32, 2^(N + 1))
     @inbounds res[1:2^N] .= vec(state.board)
     @inbounds res[2^N+1:2^N+length(state.history)] .= state.history
@@ -133,7 +133,7 @@ function action_on_gamestate(
     return (state_p, convert(Vector{Int}, p))
 end
 
-function GI.symmetries(::CubeSpec{N}, state) where {N}
+function GI.symmetries(::CapsSpec{N}, state) where {N}
     cids = CartesianIndices(state.board)
     lids = LinearIndices(state.board)
 
@@ -148,27 +148,27 @@ end
 
 using Crayons
 
-function GI.action_string(::CubeSpec{N}, action) where {N}
-    ci = CartesianIndices(board_shape(CubeSpec{N}))[action]
+function GI.action_string(::CapsSpec{N}, action) where {N}
+    ci = CartesianIndices(board_shape(CapsSpec{N}))[action]
     return join(Tuple(ci) .- 1, "")
 end
 
-function GI.parse_action(::CubeSpec{N}, str) where {N}
+function GI.parse_action(::CapsSpec{N}, str) where {N}
     if length(str) <= ceil(log10(N))
         k = parse(Int, str)
         return k
     else
         ci = map(x -> (x == '0' ? 1 : 2), collect(str)[1:N])
-        k = getindex(LinearIndices(board_shape(CubeSpec{N})), ci...)
+        k = getindex(LinearIndices(board_shape(CapsSpec{N})), ci...)
         return k
     end
 end
 
-function GI.read_state(::CubeSpec{N}) where {N}
+function GI.read_state(::CapsSpec{N}) where {N}
     throw("Not Implemented")
 end
 
-function GI.render(g::CubeEnv{N}; with_position_names = true, botmargin = true) where {N}
+function GI.render(g::CapsEnv{N}; with_position_names = true, botmargin = true) where {N}
 
     println("current value: ", GI.heuristic_value(g), "\n")
 
