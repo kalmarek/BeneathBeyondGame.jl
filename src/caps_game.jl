@@ -94,7 +94,7 @@ end
 #####
 ##### Symmetries
 #####
-
+#=
 struct AllPerms{T<:Integer}
     all::Int
     c::Vector{T}
@@ -151,15 +151,16 @@ function action_on_gamestate(
     return (state_p, convert(Vector{Int}, p))
 end
 
-# function GI.symmetries(::CapsSpec{N}, state) where {N}
-#     cids = CartesianIndices(state.board)
-#     lids = LinearIndices(state.board)
-# 
-#     return Tuple{typeof(state), Vector{Int}}[
-#         action_on_gamestate(state, σ, cids = cids, lids = lids) for σ in Iterators.rest(AllPerms(N), 1)
-#         ]
-# end
+function GI.symmetries(::CapsSpec{N}, state) where {N}
+    cids = CartesianIndices(state.board)
+    lids = LinearIndices(state.board)
 
+    return Tuple{typeof(state), Vector{Int}}[
+        action_on_gamestate(state, σ, cids = cids, lids = lids) for σ in Iterators.rest(AllPerms(N), 1)
+        ]
+end
+
+=#
 #####
 ##### Interaction API
 #####
