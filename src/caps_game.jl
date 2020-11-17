@@ -193,8 +193,6 @@ end
 
 function GI.render(g::CapsEnv{N}; with_position_names = true, botmargin = true) where {N}
 
-    println("current value: ", GI.heuristic_value(g), "\n")
-
     st = GI.current_state(g)
     amask = GI.actions_mask(g)
     k = ceil(Int, log10(3^N))
@@ -204,5 +202,6 @@ function GI.render(g::CapsEnv{N}; with_position_names = true, botmargin = true) 
         with_position_names && print(color, rpad("$action", k + 2), " | ")
         println(color, GI.action_string(GI.spec(g), action), crayon"reset")
     end
+    println("current value: ", GI.heuristic_value(g), "\n")
     botmargin && print("\n")
 end
