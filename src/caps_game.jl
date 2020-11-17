@@ -173,12 +173,16 @@ function GI.action_string(::CapsSpec{N}, action) where {N}
 end
 
 function GI.parse_action(::CapsSpec{N}, str) where {N}
-    if length(str) <= ceil(log10(N))
+    if length(str) <= ceil(log10(3^N))
         k = parse(Int, str)
         return k
     else
-        ci = map(x -> (x == '0' ? 1 : 2), collect(str)[1:N])
-        k = getindex(LinearIndices(board_shape(CapsSpec{N})), ci...)
+        ci = map(collect(str)[1:N]) do x
+            x == '0' && return 3
+            x == '1' && return 1
+            x == '2' && return 2
+        end
+        k = LinearIndices(board_shape(CapsSpec{N}))[ci...]
         return k
     end
 end
@@ -193,7 +197,7 @@ function GI.render(g::CapsEnv{N}; with_position_names = true, botmargin = true) 
 
     st = GI.current_state(g)
     amask = GI.actions_mask(g)
-    k = ceil(Int, log10(2^N))
+    k = ceil(Int, log10(3^N))
     for action in GI.actions(GI.spec(g))
         color =
         amask[action] ? crayon"bold fg:light_gray" : crayon"fg:dark_gray"
