@@ -47,7 +47,7 @@ GI.white_playing(::CapsEnv) = true
 GI.game_terminated(g::CapsEnv) = all(board(g))
 
 GI.white_reward(g::CapsEnv) =
-    isempty(history(g)) ? 0.0 : Float64(length(history(g)) - sum(g.board))
+    isempty(history(g)) ? 0.0 : Float64(- sum(board(g)))
     # isempty(history(g)) ? 0.0 : Float64(length(history(g)))
 
 function third_point_on_line(p1, p2)
