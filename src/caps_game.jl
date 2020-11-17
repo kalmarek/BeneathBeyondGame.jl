@@ -178,9 +178,9 @@ function GI.parse_action(::CapsSpec{N}, str) where {N}
         return k
     else
         ci = map(collect(str)[1:N]) do x
-            x == '0' && return 3
-            x == '1' && return 1
-            x == '2' && return 2
+            x == '0' && return 1
+            x == '1' && return 2
+            x == '2' && return 3
         end
         k = LinearIndices(board_shape(CapsSpec{N}))[ci...]
         return k
