@@ -42,7 +42,7 @@ learning = LearningParams(
   nonvalidity_penalty=1.,
   min_checkpoints_per_epoch=0,
   max_batches_per_checkpoint=5_000,
-  num_checkpoints=4)
+  num_checkpoints=1)
 
 params = Params(
   arena=arena,
