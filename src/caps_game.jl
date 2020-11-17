@@ -47,7 +47,8 @@ GI.white_playing(::CapsEnv) = true
 GI.game_terminated(g::CapsEnv) = all(board(g))
 
 GI.white_reward(g::CapsEnv) =
-    isempty(history(g)) ? 0.0 : Float64(length(history(g)))
+    isempty(history(g)) ? 0.0 : Float64(length(history(g)) - sum(g.board))
+    # isempty(history(g)) ? 0.0 : Float64(length(history(g)))
 
 function third_point_on_line(p1, p2)
    # q1 = p1 .- 1;
@@ -77,7 +78,7 @@ end
 
 GI.play!(g::CapsEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CapsEnv) = isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
+GI.heuristic_value(g::CapsEnv) = GI.white_reward(g) # isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
 
 #####
 ##### Machine Learning API
