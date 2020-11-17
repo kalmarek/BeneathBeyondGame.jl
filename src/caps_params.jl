@@ -65,5 +65,5 @@ benchmark = [
     Benchmark.MctsRollouts(self_play.mcts),
     benchmark_sim)]
 
-experiment(N::Integer) = Experiment(
-  "caps_$N", CapsSpec{N}(), params, Network, netparams, benchmark=benchmark)
+experiment(N::Integer, P::Integer=3) = Experiment(
+  "caps_$N", CapsSpec{N, P}(), params, Network, netparams, benchmark=benchmark)

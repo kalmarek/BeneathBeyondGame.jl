@@ -1,11 +1,10 @@
 import AlphaZero.GI
 
-struct CapsSpec{N} <: GI.AbstractGameSpec end
+struct CapsSpec{N, P} <: GI.AbstractGameSpec end
 
-board_shape(::Type{CapsSpec{N}}) where {N} = ntuple(_ -> 3, N)
+board_shape(::Type{CapsSpec{N, P}}) where {N, P} = ntuple(_ -> P, N)
 
-# Optionally input characteristic p (for now it is 3)
-mutable struct CapsEnv{N} <: GI.AbstractGameEnv
+mutable struct CapsEnv{N, P} <: GI.AbstractGameEnv
     board::BitArray{N}
     history::Vector{UInt16}
     # possible_moves::Vector{UInt16}
@@ -15,15 +14,15 @@ board(g::CapsEnv) = g.board
 history(g::CapsEnv) = g.history
 
 function GI.init(
-    ::CapsSpec{N},
-    state = (board = falses(board_shape(CapsSpec{N})), history = UInt16[]),
-) where {N}
+    ::CapsSpec{N, P},
+    state = (board = falses(board_shape(CapsSpec{N, P})), history = UInt16[]),
+) where {N, P}
    # Todo: Better upper bound
-    sizehint!(state.history, 3^N-N)
-    return CapsEnv{N}(copy(state.board), copy(state.history))
+    sizehint!(state.history, P^N-N)
+    return CapsEnv{N, P}(copy(state.board), copy(state.history))
 end
 
-GI.spec(::CapsEnv{N}) where {N} = CapsSpec{N}()
+GI.spec(::CapsEnv{N, P}) where {N, P} = CapsSpec{N, P}()
 
 GI.two_players(::CapsSpec) = false
 
@@ -50,7 +49,7 @@ GI.white_reward(g::CapsEnv) =
     isempty(history(g)) ? 0.0 : Float64(- sum(board(g)))
     # isempty(history(g)) ? 0.0 : Float64(length(history(g)))
 
-function third_point_on_line(p1, p2)
+function third_point_on_line(p1, p2, P)
    # q1 = p1 .- 1;
    # q2 = p2 .- 1;
    # qr = ((q1 .+ q2) .* (-1))
@@ -58,17 +57,17 @@ function third_point_on_line(p1, p2)
    # qr = qr .% 3
    # qr = qr .+ 1
    # return qr
-   return mod.(-1 .*(p1 .+ p2), Ref(1:3))
+   return mod.(-1 .*(p1 .+ p2), Ref(Base.OneTo(P)))
 end
 
-Base.@propagate_inbounds function Base.push!(g::CapsEnv, n::Integer)
+Base.@propagate_inbounds function Base.push!(g::CapsEnv{N, P}, n::Integer) where {N, P}
     @boundscheck checkbounds(board(g), n)
 
     g.board[n] = true
-    q = Tuple(CartesianIndices(g.board)[n])
+    q = Tuple(CartesianIndices(board(g))[n])
     for pIndex in history(g)
-       p = Tuple(CartesianIndices(g.board)[pIndex])
-       pq = third_point_on_line(p, q)
+       p = Tuple(CartesianIndices(board(g))[pIndex])
+       pq = third_point_on_line(p, q, P)
        g.board[pq...] = true
     end
 
@@ -78,16 +77,16 @@ end
 
 GI.play!(g::CapsEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CapsEnv) = GI.white_reward(g) # isempty(history(g)) ? 0.0 : -float(sum(history(g))) # Polymake.triangulation_size(g.bb)
+GI.heuristic_value(g::CapsEnv) = GI.white_reward(g)
 
 #####
 ##### Machine Learning API
 #####
 
-function GI.vectorize_state(::CapsSpec{N}, state) where {N}
-    res = zeros(Float32, 2^N + 3^N)
-    @inbounds res[1:3^N] .= vec(state.board)
-    @inbounds res[3^N+1:3^N+length(state.history)] .= state.history
+function GI.vectorize_state(::CapsSpec{N,P}, state) where {N, P}
+    res = zeros(Float32, 2*(P^N))
+    @inbounds res[1:P^N] .= vec(state.board)
+    @inbounds res[P^N+1:P^N+length(state.history)] .= state.history
     return res
 end
 
@@ -167,22 +166,18 @@ end
 
 using Crayons
 
-function GI.action_string(::CapsSpec{N}, action) where {N}
-    ci = CartesianIndices(board_shape(CapsSpec{N}))[action]
+function GI.action_string(::CapsSpec{N,P}, action) where {N, P}
+    ci = CartesianIndices(board_shape(CapsSpec{N, P}))[action]
     return join(Tuple(ci) .- 1, "")
 end
 
-function GI.parse_action(::CapsSpec{N}, str) where {N}
-    if length(str) <= ceil(log10(3^N))
+function GI.parse_action(::CapsSpec{N, P}, str) where {N, P}
+    if length(str) <= ceil(log10(P^N))
         k = parse(Int, str)
         return k
     else
-        ci = map(collect(str)[1:N]) do x
-            x == '0' && return 1
-            x == '1' && return 2
-            x == '2' && return 3
-        end
-        k = LinearIndices(board_shape(CapsSpec{N}))[ci...]
+        ci = map(c -> parse(Int, c) + 1, collect(str)[1:N])
+        k = LinearIndices(board_shape(CapsSpec{N, P}))[ci...]
         return k
     end
 end
@@ -191,11 +186,11 @@ function GI.read_state(::CapsSpec{N}) where {N}
     throw("Not Implemented")
 end
 
-function GI.render(g::CapsEnv{N}; with_position_names = true, botmargin = true) where {N}
+function GI.render(g::CapsEnv{N, P}; with_position_names = true, botmargin = true) where {N, P}
 
     st = GI.current_state(g)
     amask = GI.actions_mask(g)
-    k = ceil(Int, log10(3^N))
+    k = ceil(Int, log10(P^N))
     for action in GI.actions(GI.spec(g))
         color =
         amask[action] ? crayon"bold fg:light_gray" : crayon"fg:dark_gray"
