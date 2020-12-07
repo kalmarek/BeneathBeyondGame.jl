@@ -60,8 +60,7 @@ GI.white_playing(::CubeEnv) = true
 
 GI.game_terminated(g::CubeEnv) = all(board(g))
 
-GI.white_reward(g::CubeEnv) =
-    isempty(history(g)) ? Inf : -log(Polymake.triangulation_size(algo(g)))
+GI.white_reward(g::CubeEnv) = -log(1+Polymake.triangulation_size(algo(g)))
 
 Base.@propagate_inbounds function Base.push!(g::CubeEnv, n::Integer)
     @boundscheck checkbounds(board(g), n)
@@ -76,8 +75,7 @@ end
 
 GI.play!(g::CubeEnv, action) = push!(g, action)
 
-GI.heuristic_value(g::CubeEnv) =
-    isempty(history(g)) ? Inf : -log(Polymake.triangulation_size(algo(g)))
+GI.heuristic_value(g::CubeEnv) = GI.white_reward(g)
 
 #####
 ##### Machine Learning API
