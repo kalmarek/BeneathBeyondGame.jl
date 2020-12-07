@@ -7,6 +7,8 @@ version = "0.0.1"
 AlphaZero = "8ed9eb0b-7496-408d-8c8b-2119aeea02cd"
 Crayons = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 Polymake = "d720cf60-89b5-51f5-aff5-213f193123e7"
+libpolymake_julia_jll = "4d8266f6-2b3b-57e3-ad7a-d431eaaac945"
+polymake_jll = "7c209550-9012-526c-9264-55ba7a78ba2c"
 
 [compat]
 AlphaZero = "0.3"
