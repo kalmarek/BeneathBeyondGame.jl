@@ -4,7 +4,7 @@ netparams() = NetLib.SimpleNetHP(width = 100, depth_common = 4, use_batch_norm =
 
 self_play() = SelfPlayParams(
     sim = SimParams(
-        num_games = 1000,
+        num_games = 2000,
         num_workers = 4,
         use_gpu = false,
         reset_every = 16,
@@ -54,7 +54,7 @@ params(; num_iters = 10, kwargs...) = Params(
     memory_analysis = nothing,
     ternary_rewards = false,
     use_symmetries = true,
-    mem_buffer_size = PLSchedule(80_000),
+    mem_buffer_size = PLSchedule(800_000),
 )
 
 benchmark_sim() = SimParams(arena().sim; num_games = 400, num_workers = 100)
@@ -68,7 +68,7 @@ benchmark() = [Benchmark.Duel(
 experiment(N::Integer; num_iters = 10) = Experiment(
     "cube_$N",
     CubeSpec{N}(),
-    params(; num_iters = 10, l2_regulariation = 1e-3, lr = 5e-3, batch_size = 32),
+    params(; num_iters = num_iters, l2_regulariation = 1e-3, lr = 5e-3, batch_size = 64),
     Network,
     netparams(),
     benchmark = benchmark(),
