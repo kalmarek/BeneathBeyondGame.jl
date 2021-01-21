@@ -14,7 +14,7 @@ board(g::CubeEnv) = g.board
 history(g::CubeEnv) = g.history
 algo(g::CubeEnv) = g.algo
 
-function vertices_cube(n::Integer, lo=-1, up=1)
+function vertices_cube(n::Integer, lo=0, up=1)
     verts = Iterators.product(ntuple(_->lo:up-lo:up, n)...)
     res = Array{Int}(undef, 2^n, n+1)
     res[:, 1] .= 1
@@ -24,25 +24,32 @@ function vertices_cube(n::Integer, lo=-1, up=1)
     return res
 end
 
+function algo_from_state(state)
+    board, history = state
+    N = length(size(board))
+    algo = Polymake.BeneathBeyond(Polymake.Matrix{Polymake.Rational}(vertices_cube(N)))
+    for pt in state.history
+        Polymake.add_point!(algo, pt)
+    end
+    return algo
+end
+
 function GI.init(
     ::CubeSpec{N},
-    state = (board = falses(board_shape(CubeSpec{N})),
-             history = UInt16[],
-             algo = Polymake.BeneathBeyond(Polymake.Matrix{Polymake.Rational}(vertices_cube(N)))
-             ),
+    state = (board = falses(board_shape(CubeSpec{N})), history = UInt16[]),
 ) where {N}
     sizehint!(state.history, 2^N)
-    return CubeEnv(copy(state.board), copy(state.history), deepcopy(state.algo))
+    return CubeEnv(copy(state.board), copy(state.history), algo_from_state(state))
 end
 
 GI.spec(::CubeEnv{N}) where {N} = CubeSpec{N}()
 
 GI.two_players(::CubeSpec) = false
 
-function GI.set_state!(g::CubeEnv, state)
+function GI.set_state!(g::CubeEnv{N}, state) where N
     g.board = copy(state.board)
     g.history = copy(state.history)
-    g.algo = deepcopy(state.algo)
+    g.algo = algo_from_state(state)
 end
 
 #####
@@ -54,13 +61,16 @@ GI.actions(::CubeSpec{N}) where {N} = 1:2^N
 GI.actions_mask(g::CubeEnv) = vec(.~(board(g)))
 
 GI.current_state(g::CubeEnv) =
-    (board = copy(board(g)), history = copy(history(g)), algo = deepcopy(algo(g)))
+    (board = copy(board(g)), history = copy(history(g)))
 
 GI.white_playing(::CubeEnv) = true
 
 GI.game_terminated(g::CubeEnv) = all(board(g))
 
-GI.white_reward(g::CubeEnv) = -log(1+Polymake.triangulation_size(algo(g)))
+function GI.white_reward(g::CubeEnv)
+    final_reward = -log2(1+Polymake.triangulation_size(algo(g)))
+    return final_reward
+end
 
 Base.@propagate_inbounds function Base.push!(g::CubeEnv, n::Integer)
     @boundscheck checkbounds(board(g), n)
@@ -68,7 +78,7 @@ Base.@propagate_inbounds function Base.push!(g::CubeEnv, n::Integer)
     g.board[n] = true
     push!(g.history, n)
     # @info "adding point $n:" g.algo.rays[n, :]
-    @inbounds Polymake.add_point!(g.algo, n)
+    Polymake.add_point!(g.algo, n)
 
     return g
 end
@@ -82,10 +92,10 @@ GI.heuristic_value(g::CubeEnv) = GI.white_reward(g)
 #####
 
 function GI.vectorize_state(::CubeSpec{N}, state) where {N}
-    res = zeros(Float32, 2^(N + 1) + 1)
+    res = zeros(Float32, 2^(N + 1))
     @inbounds res[1:2^N] .= vec(state.board)
     @inbounds res[2^N+1:2^N+length(state.history)] .= state.history
-    @inbounds res[2^(N + 1) + 1] = Polymake.triangulation_size(state.algo)
+    # @inbounds res[2^(N + 1) + 1] = Polymake.triangulation_size(state.algo)
     return res
 end
 
